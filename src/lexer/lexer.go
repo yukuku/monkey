@@ -28,6 +28,11 @@ func (lx *Lexer) NextToken() token.Token {
 		return token.Token{Type: typ, Literal: literal}
 	}
 
+	// skip whitespaces
+	for lx.ch == ' ' || lx.ch == '\t' || lx.ch == '\n' || lx.ch == '\r' {
+		lx.readChar()
+	}
+
 	switch lx.ch {
 	case '=':
 		res = newToken(token.ASSIGN, lx.ch)
@@ -47,6 +52,42 @@ func (lx *Lexer) NextToken() token.Token {
 		res = newToken(token.PLUS, lx.ch)
 	case 0:
 		res = newToken(token.EOF, 0)
+	default:
+		isLetter := func(ch byte) bool {
+			return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
+		}
+
+		isDigit := func(ch byte) bool {
+			return '0' <= ch && ch <= '9'
+		}
+
+		if isLetter(lx.ch) {
+			readIdentifier := func() string {
+				pos := lx.position
+				for isLetter(lx.ch) {
+					lx.readChar()
+				}
+				return lx.input[pos:lx.position]
+			}
+			res.Literal = readIdentifier()
+			res.Type = token.LookupIdent(res.Literal)
+			return res
+
+		} else if isDigit(lx.ch) {
+			readNumber := func() string {
+				pos := lx.position
+				for isDigit(lx.ch) {
+					lx.readChar()
+				}
+				return lx.input[pos:lx.position]
+			}
+			res.Type = token.INT
+			res.Literal = readNumber()
+			return res
+
+		} else {
+			res = newToken(token.ILLEGAL, lx.ch)
+		}
 	}
 
 	lx.readChar()
