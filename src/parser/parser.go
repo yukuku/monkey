@@ -4,10 +4,12 @@ import (
 	"lexer"
 	"token"
 	"ast"
+	"fmt"
 )
 
 type Parser struct {
 	lx *lexer.Lexer
+	errors []string
 
 	curToken  *token.Token
 	peekToken *token.Token
@@ -21,6 +23,14 @@ func New(lx *lexer.Lexer) *Parser {
 	res.nextToken()
 
 	return res
+}
+
+func (p *Parser) Errors() []string {
+	return p.errors
+}
+
+func (p *Parser) peekError(typ token.Type) {
+	p.errors = append(p.errors, fmt.Sprintf("next token is expected to be %q, got: %q", typ, p.peekToken.Type))
 }
 
 func (p *Parser) nextToken() {
@@ -70,15 +80,16 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	}
 
 	return res
-}
+};
 
-// expectPeek checks if the peek token is of specified type, then advances to the next
-// one if it is.
+// expectPeek checks if the peek token is of specified type,
+// then advances to the next one if it is.
 func (p *Parser) expectPeek(typ token.Type) bool {
 	if p.peekTokenIs(typ) {
 		p.nextToken()
 		return true
 	}
+	p.peekError(typ)
 	return false
 }
 

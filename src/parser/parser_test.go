@@ -21,6 +21,16 @@ let foo = 129123;
 		t.Fatalf("Parse() returned nil")
 	}
 
+	// check errors
+	errors := p.Errors()
+	if len(errors) != 0 {
+		t.Errorf("parser has %d errors", len(errors))
+		for _, msg := range errors {
+			t.Errorf("- error: %s", msg)
+		}
+		t.FailNow()
+	}
+
 	tests := [] struct {
 		expectedIdentifier string
 	}{
