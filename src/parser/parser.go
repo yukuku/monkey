@@ -7,16 +7,32 @@ import (
 	"fmt"
 )
 
+const (
+	_        = iota
+	LOWEST
+	EQUALS
+	INEQUALS
+	SUM
+	PRODUCAT
+	PREFIX
+	CALL
+)
+
 type Parser struct {
-	lx *lexer.Lexer
+	lx     *lexer.Lexer
 	errors []string
 
 	curToken  *token.Token
 	peekToken *token.Token
+
+	prefixParseFns map[token.Type]func() ast.Expression
+	infixParseFns  map[token.Type]func(ast.Expression) ast.Expression
 }
 
 func New(lx *lexer.Lexer) *Parser {
 	res := &Parser{lx: lx}
+	res.prefixParseFns = make(map[token.Type]func() ast.Expression)
+	res.prefixParseFns[token.IDENT] = res.parseIdentifier
 
 	// read two tokens so curToken and peekToken are set
 	res.nextToken()
@@ -36,7 +52,7 @@ func (p *Parser) peekError(typ token.Type) {
 func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
 	tmp := p.lx.NextToken()
-	p.peekToken = &tmp;
+	p.peekToken = &tmp
 }
 
 func (p *Parser) Parse() *ast.Program {
@@ -59,7 +75,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 	return nil
 }
@@ -82,21 +98,47 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 	}
 
 	return res
-};
+}
 
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	res := &ast.ReturnStatement{Token: p.curToken}
-	
+
 	// TODO now we just skip until semicolon
 	for p.curToken.Type != token.SEMICOLON {
 		p.nextToken()
 	}
 
 	return res
-};
+}
+
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	res := &ast.ExpressionStatement{Token: p.curToken}
+
+	res.Expression = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return res
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.curToken, Name: p.curToken.Literal}
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefixParseFn := p.prefixParseFns[p.curToken.Type]
+	if prefixParseFn == nil {
+		return nil
+	}
+
+	leftExp := prefixParseFn()
+	return leftExp
+}
 
 // expectPeek checks if the peek token is of specified type,
-// then advances to the next one if it is.
+// then advances to the next one if it is. If not it will record it as an error.
 func (p *Parser) expectPeek(typ token.Type) bool {
 	if p.peekTokenIs(typ) {
 		p.nextToken()

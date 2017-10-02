@@ -133,3 +133,29 @@ let 129123;
 		t.Fatalf("parser is expected to have %d errors. got: %d", expectedErrorCount, len(errors))
 	}
 }
+
+func TestIdentifierExpression(t *testing.T) {
+	input := "foo;"
+	lx := lexer.New(input)
+	p := New(lx)
+	prog := p.Parse()
+	cannotHaveErrors(t, p)
+
+	if len(prog.Statements) != 1 {
+		t.Fatalf("wrong number of statements. got: %d", len(prog.Statements))
+	}
+
+	es, ok := prog.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("first statement is not an expression statement")
+	}
+
+	id, ok := es.Expression.(*ast.Identifier)
+	if !ok {
+		t.Fatalf("first statement is not an identifier")
+	}
+
+	if id.Name != "foo" {
+		t.Fatalf("name of identifier is not correct. got: %s", id.Name)
+	}
+}
