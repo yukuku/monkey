@@ -75,3 +75,26 @@ let foo = 129123;
 		}
 	}
 }
+
+func TestErrorReporting(t *testing.T) {
+	input := `
+let x = 5;
+let y 10;
+let 129123;
+ 	`
+
+	lx := lexer.New(input)
+	p := New(lx)
+
+	prog := p.Parse()
+	if prog == nil {
+		t.Fatalf("Parse() returned nil")
+	}
+
+	// must have errors
+	errors := p.Errors()
+	expectedErrorCount := 2
+	if len(errors) != expectedErrorCount {
+		t.Fatalf("parser is expected to have %d errors. got: %d", expectedErrorCount, len(errors))
+	}
+}
