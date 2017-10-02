@@ -50,6 +50,12 @@ func TestNextToken2(t *testing.T) {
 
 		!-/*7;
 		7 < 99 > 7;
+
+		if (3 < 8) {
+			return true;
+		} else {
+			return false;
+		}
 		`
 
 	tests := []struct {
@@ -104,7 +110,24 @@ func TestNextToken2(t *testing.T) {
 		{token.GT, ">"},
 		{token.INT, "7"},
 		{token.SEMICOLON, ";"},
-		{token.EOF, ""},    
+		{token.IF, "if"},
+		{token.LPAREN, "("},
+		{token.INT, "3"},
+		{token.LT, "<"},
+		{token.INT, "8"},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
+		{token.RETURN, "return"},
+		{token.TRUE, "true"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+		{token.ELSE, "else"},
+		{token.LBRACE, "{"},
+		{token.RETURN, "return"},
+		{token.FALSE, "false"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+		{token.EOF, ""},
 	}
 
 	lx := New(input)
