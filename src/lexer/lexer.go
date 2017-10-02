@@ -33,9 +33,35 @@ func (lx *Lexer) NextToken() token.Token {
 		lx.readChar()
 	}
 
+	peekChar := func() byte {
+		if lx.readPos >= len(lx.input) {
+			return 0
+		} else {
+			return lx.input[lx.readPos]
+		}
+	}
+
 	switch lx.ch {
 	case '=':
-		res = newToken(token.ASSIGN, lx.ch)
+		fallthrough
+	case '!':
+		firstChar := lx.ch
+		if peekChar() == '=' {
+			lx.readChar() // we really want to suck one character
+			if firstChar == '=' {
+				res.Type = token.EQ
+			} else {
+				res.Type = token.NOT_EQ
+			}
+			res.Literal = string(firstChar) + string(lx.ch)
+		} else {
+			if firstChar == '=' {
+				res = newToken(token.ASSIGN, lx.ch)
+			} else {
+				res = newToken(token.BANG, lx.ch)
+			}
+		}
+
 	case ';':
 		res = newToken(token.SEMICOLON, lx.ch)
 	case '(':
@@ -52,8 +78,6 @@ func (lx *Lexer) NextToken() token.Token {
 		res = newToken(token.PLUS, lx.ch)
 	case '-':
 		res = newToken(token.MINUS, lx.ch)
-	case '!':
-		res = newToken(token.BANG, lx.ch)
 	case '/':
 		res = newToken(token.SLASH, lx.ch)
 	case '*':
