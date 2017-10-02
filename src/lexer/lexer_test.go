@@ -47,6 +47,9 @@ func TestNextToken2(t *testing.T) {
 		};
 
 		let result = tambah(lima, sepuluh);
+
+		!-/*7;
+		7 < 99 > 7;
 		`
 
 	tests := []struct {
@@ -89,7 +92,19 @@ func TestNextToken2(t *testing.T) {
 		{token.IDENT, "sepuluh"},
 		{token.RPAREN, ")"},
 		{token.SEMICOLON, ";"},
-		{token.EOF, ""},
+		{token.BANG, "!"},
+		{token.MINUS, "-"},
+		{token.SLASH, "/"},
+		{token.ASTERISK, "*"},
+		{token.INT, "7"},
+		{token.SEMICOLON, ";"},
+		{token.INT, "7"},
+		{token.LT, "<"},
+		{token.INT, "99"},
+		{token.GT, ">"},
+		{token.INT, "7"},
+		{token.SEMICOLON, ";"},
+		{token.EOF, ""},    
 	}
 
 	lx := New(input)
