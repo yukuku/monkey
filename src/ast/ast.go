@@ -25,7 +25,7 @@ type Program struct {
 
 func (p *Program) TokenLiteral() string {
 	if len(p.Statements) > 0 {
-		var buf bytes.Buffer
+		buf := bytes.Buffer{}
 		for _, s := range p.Statements {
 			buf.WriteString(s.TokenLiteral())
 			buf.WriteString(" ")

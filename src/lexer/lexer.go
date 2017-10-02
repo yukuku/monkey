@@ -16,13 +16,11 @@ func New(input string) *Lexer {
 }
 
 func (lx *Lexer) NextToken() token.Token {
-	var res token.Token
+	res := token.Token{}
 
 	newToken := func(typ token.Type, ch byte) token.Token {
-		var literal string
-		if ch == 0 {
-			literal = ""
-		} else {
+		literal := ""
+		if ch != 0 {
 			literal = string(ch)
 		}
 		return token.Token{Type: typ, Literal: literal}
