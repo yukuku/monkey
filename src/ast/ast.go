@@ -58,6 +58,18 @@ func (i *Identifier) String() string {
 	return i.Name
 }
 
+type IntegerLiteral struct {
+	Token    *token.Token
+	IntValue int64
+}
+func (il *IntegerLiteral) expressionNode() {}
+func (il *IntegerLiteral) TokenLiteral() string {
+	return il.Token.Literal
+}
+func (il *IntegerLiteral) String() string {
+	return fmt.Sprintf("%d", il.IntValue)
+}
+
 type LetStatement struct {
 	Token *token.Token
 	Ident *Identifier
@@ -86,9 +98,10 @@ func (s *ReturnStatement) String() string {
 }
 
 type ExpressionStatement struct {
-	Token *token.Token
+	Token      *token.Token
 	Expression Expression
 }
+
 func (s *ExpressionStatement) statementNode() {}
 func (s *ExpressionStatement) TokenLiteral() string {
 	return s.Token.Literal

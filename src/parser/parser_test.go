@@ -159,3 +159,29 @@ func TestIdentifierExpression(t *testing.T) {
 		t.Fatalf("name of identifier is not correct. got: %s", id.Name)
 	}
 }
+
+func TestIntegerLiteralExpression(t *testing.T) {
+	input := "7;"
+	lx := lexer.New(input)
+	p := New(lx)
+	prog := p.Parse()
+	cannotHaveErrors(t, p)
+
+	if len(prog.Statements) != 1 {
+		t.Fatalf("wrong number of statements. got: %d", len(prog.Statements))
+	}
+
+	es, ok := prog.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("first statement is not an expression statement")
+	}
+
+	il, ok := es.Expression.(*ast.IntegerLiteral)
+	if !ok {
+		t.Fatalf("first statement is not an integer literal")
+	}
+
+	if il.IntValue != 7 {
+		t.Fatalf("name of identifier is not correct. got: %d", il.IntValue)
+	}
+}
