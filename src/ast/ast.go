@@ -2,8 +2,8 @@ package ast
 
 import (
 	"bytes"
-	"token"
 	"fmt"
+	"token"
 )
 
 type Node interface {
@@ -62,12 +62,27 @@ type IntegerLiteral struct {
 	Token    *token.Token
 	IntValue int64
 }
+
 func (il *IntegerLiteral) expressionNode() {}
 func (il *IntegerLiteral) TokenLiteral() string {
 	return il.Token.Literal
 }
 func (il *IntegerLiteral) String() string {
 	return fmt.Sprintf("%d", il.IntValue)
+}
+
+type PrefixExpression struct {
+	Token      *token.Token
+	Operator   string
+	Expression Expression
+}
+
+func (pr *PrefixExpression) expressionNode() {}
+func (pr *PrefixExpression) TokenLiteral() string {
+	return pr.Token.Literal
+}
+func (pr *PrefixExpression) String() string {
+	return fmt.Sprintf("(%s%s)", pr.Operator, pr.Expression.String())
 }
 
 type LetStatement struct {

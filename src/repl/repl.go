@@ -1,9 +1,9 @@
 package repl
 
 import (
-	"io"
 	"bufio"
 	"fmt"
+	"io"
 	"lexer"
 	"token"
 )

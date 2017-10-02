@@ -1,10 +1,10 @@
 package main
 
 import (
-	"os/user"
 	"fmt"
-	"repl"
 	"os"
+	"os/user"
+	"repl"
 )
 
 func main() {

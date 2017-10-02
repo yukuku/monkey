@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"testing"
-	"lexer"
 	"ast"
+	"lexer"
+	"testing"
 )
 
 func TestLetStatements(t *testing.T) {
@@ -184,4 +184,58 @@ func TestIntegerLiteralExpression(t *testing.T) {
 	if il.IntValue != 7 {
 		t.Fatalf("name of identifier is not correct. got: %d", il.IntValue)
 	}
+}
+
+func TestParsingPrefixExpressions(t *testing.T) {
+	tests := []struct {
+		input  string
+		op     string
+		intval int64
+	}{
+		{"!7;", "!", 7},
+		{"-77;", "-", 77},
+	}
+
+	for _, tt := range tests {
+		p := New(lexer.New(tt.input))
+		prog := p.Parse()
+		cannotHaveErrors(t, p)
+
+		if len(prog.Statements) != 1 {
+			t.Fatalf("wrong number of statements. got: %d", len(prog.Statements))
+		}
+
+		es, ok := prog.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("first statement is not an expression statement")
+		}
+
+		pr, ok := es.Expression.(*ast.PrefixExpression)
+		if !ok {
+			t.Fatalf("first statement is not a prefix expression")
+		}
+
+		if pr.Operator != tt.op {
+			t.Fatalf("operator is not correct. expected: %q, got: %q", tt.op, pr.Operator)
+		}
+
+		if !testIntegerLiteral(t, pr.Expression, tt.intval) {
+			return
+		}
+	}
+}
+
+func testIntegerLiteral(t *testing.T, exp ast.Expression, intval int64) bool {
+	il, ok := exp.(*ast.IntegerLiteral)
+	if !ok {
+		t.Errorf("exp is not an integer literal. got: %T", exp)
+		return false
+	}
+
+	if il.IntValue != intval {
+		t.Errorf("int value is not correct. expected: %d, got: %d", intval, il.IntValue)
+		return false
+	}
+
+	return true
 }
