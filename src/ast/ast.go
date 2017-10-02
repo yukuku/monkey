@@ -85,6 +85,21 @@ func (pr *PrefixExpression) String() string {
 	return fmt.Sprintf("(%s%s)", pr.Operator, pr.Expression.String())
 }
 
+type InfixExpression struct {
+	Token      *token.Token
+	Left Expression
+	Operator   string
+	Right Expression
+}
+
+func (in *InfixExpression) expressionNode() {}
+func (in *InfixExpression) TokenLiteral() string {
+	return in.Token.Literal
+}
+func (in *InfixExpression) String() string {
+	return fmt.Sprintf("(%s %s %s)", in.Left.String(), in.Operator, in.Right.String())
+}
+
 type LetStatement struct {
 	Token *token.Token
 	Ident *Identifier

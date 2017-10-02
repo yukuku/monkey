@@ -239,3 +239,83 @@ func testIntegerLiteral(t *testing.T, exp ast.Expression, intval int64) bool {
 
 	return true
 }
+
+func TestParsingInfixExpressions(t *testing.T) {
+	tests := []struct {
+		input string
+		left  int64
+		op    string
+		right int64
+	}{
+		{"7 + 7", 7, "+", 7},
+		{"7 - 7", 7, "-", 7},
+		{"7 * 7", 7, "*", 7},
+		{"7 / 7", 7, "/", 7},
+		{"7 > 7", 7, ">", 7},
+		{"7 < 7", 7, "<", 7},
+		{"7 == 7", 7, "==", 7},
+		{"7 != 7", 7, "!=", 7},
+	}
+
+	for _, tt := range tests {
+		p := New(lexer.New(tt.input))
+		prog := p.Parse()
+		cannotHaveErrors(t, p)
+
+		if len(prog.Statements) != 1 {
+			t.Fatalf("wrong number of statements. got: %d", len(prog.Statements))
+		}
+
+		es, ok := prog.Statements[0].(*ast.ExpressionStatement)
+		if !ok {
+			t.Fatalf("first statement is not an expression statement")
+		}
+
+		in, ok := es.Expression.(*ast.InfixExpression)
+		if !ok {
+			t.Fatalf("first statement is not a infix expression")
+		}
+
+		if in.Operator != tt.op {
+			t.Fatalf("operator is not correct. expected: %q, got: %q", tt.op, in.Operator)
+		}
+
+		if !testIntegerLiteral(t, in.Left, tt.left) {
+			return
+		}
+
+		if !testIntegerLiteral(t, in.Right, tt.right) {
+			return
+		}
+	}
+}
+
+func TestPrecedence(t *testing.T) {
+	tests := []struct {
+		in  string
+		out string
+	}{
+		{
+			"3 + 4 * 5 == 3 * 1 + 4 * 5",
+			"((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))",
+		},
+		{
+			"5 < 4 != 3 > 4",
+			"((5 < 4) != (3 > 4))",
+		},
+	}
+
+	for _, tt := range tests {
+		p := New(lexer.New(tt.in))
+		prog := p.Parse()
+		cannotHaveErrors(t, p)
+
+		if len(prog.Statements) != 1 {
+			t.Fatalf("wrong number of statements. got: %d", len(prog.Statements))
+		}
+
+		if tt.out != prog.String() {
+			t.Fatalf("wrong parsing. expected: %q, got: %q", tt.out, prog.String())
+		}
+	}
+}
