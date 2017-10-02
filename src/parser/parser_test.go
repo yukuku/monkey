@@ -21,15 +21,7 @@ let foo = 129123;
 		t.Fatalf("Parse() returned nil")
 	}
 
-	// check errors
-	errors := p.Errors()
-	if len(errors) != 0 {
-		t.Errorf("parser has %d errors", len(errors))
-		for _, msg := range errors {
-			t.Errorf("- error: %s", msg)
-		}
-		t.FailNow()
-	}
+	cannotHaveErrors(t, p)
 
 	tests := [] struct {
 		expectedIdentifier string
@@ -73,6 +65,49 @@ let foo = 129123;
 		if !testLetStatement(s, tt.expectedIdentifier) {
 			return
 		}
+	}
+}
+
+func TestReturnStatements(t *testing.T) {
+	input := `
+return 5;
+return 10 + 5;
+return add(4, 5);
+ 	`
+
+	lx := lexer.New(input)
+	p := New(lx)
+
+	prog := p.Parse()
+	if prog == nil {
+		t.Fatalf("Parse() returned nil")
+	}
+
+	cannotHaveErrors(t, p)
+
+	if len(prog.Statements) != 3 {
+		t.Fatalf("Statement count is wrong: %d", len(prog.Statements))
+	}
+
+	for _, s := range prog.Statements {
+		rs, ok := s.(*ast.ReturnStatement)
+		if !ok {
+			t.Errorf("statement is not return statement. got: %T", s)
+		}
+		if rs.TokenLiteral() != "return" {
+			t.Errorf("statement token must be 'return'. got: %q", rs.TokenLiteral())
+		}
+	}
+}
+
+func cannotHaveErrors(t *testing.T, p *Parser) {
+	errors := p.Errors()
+	if len(errors) != 0 {
+		t.Errorf("parser has %d errors", len(errors))
+		for _, msg := range errors {
+			t.Errorf("- error: %s", msg)
+		}
+		t.FailNow()
 	}
 }
 
