@@ -150,13 +150,8 @@ func TestIdentifierExpression(t *testing.T) {
 		t.Fatalf("first statement is not an expression statement")
 	}
 
-	id, ok := es.Expression.(*ast.Identifier)
-	if !ok {
-		t.Fatalf("first statement is not an identifier")
-	}
-
-	if id.Name != "foo" {
-		t.Fatalf("name of identifier is not correct. got: %s", id.Name)
+	if !testIdentifier(t, es.Expression, "foo") {
+		return
 	}
 }
 
@@ -176,13 +171,8 @@ func TestIntegerLiteralExpression(t *testing.T) {
 		t.Fatalf("first statement is not an expression statement")
 	}
 
-	il, ok := es.Expression.(*ast.IntegerLiteral)
-	if !ok {
-		t.Fatalf("first statement is not an integer literal")
-	}
-
-	if il.IntValue != 7 {
-		t.Fatalf("name of identifier is not correct. got: %d", il.IntValue)
+	if !testIntegerLiteral(t, es.Expression, 7) {
+		return
 	}
 }
 
@@ -234,6 +224,21 @@ func testIntegerLiteral(t *testing.T, exp ast.Expression, intval int64) bool {
 
 	if il.IntValue != intval {
 		t.Errorf("int value is not correct. expected: %d, got: %d", intval, il.IntValue)
+		return false
+	}
+
+	return true
+}
+
+func testIdentifier(t *testing.T, exp ast.Expression, name string) bool {
+	id, ok := exp.(*ast.Identifier)
+	if !ok {
+		t.Errorf("exp is not an identifier. got: %T", exp)
+		return false
+	}
+
+	if id.Name != name {
+		t.Errorf("identifier name is not correct. expected: %d, got: %d", name, id.Name)
 		return false
 	}
 
