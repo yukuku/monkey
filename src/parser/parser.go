@@ -51,6 +51,7 @@ func New(lx *lexer.Lexer) *Parser {
 	res.prefixParseFns[token.MINUS] = res.parsePrefixOperator
 	res.prefixParseFns[token.TRUE] = res.parseBooleanLiteral
 	res.prefixParseFns[token.FALSE] = res.parseBooleanLiteral
+	res.prefixParseFns[token.LPAREN] = res.parseGroupedExpression
 
 	res.infixParseFns = make(map[token.Type]func(ast.Expression) ast.Expression)
 	res.infixParseFns[token.EQ] = res.parseInfixExpression
@@ -197,6 +198,18 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	res.Right = p.parseExpression(precedence)
 
 	return res
+}
+
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	p.nextToken()
+
+	exp := p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return exp
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression {

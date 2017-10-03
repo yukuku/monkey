@@ -357,6 +357,10 @@ func TestPrecedence(t *testing.T) {
 			"3 < 5 == true == false",
 			"(((3 < 5) == true) == false)",
 		},
+		{
+			"(5 + 5) * 2",
+			"((5 + 5) * 2)",
+		},
 	}
 
 	for _, tt := range tests {
