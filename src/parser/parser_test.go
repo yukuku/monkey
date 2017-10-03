@@ -176,6 +176,36 @@ func TestIntegerLiteralExpression(t *testing.T) {
 	}
 }
 
+func TestBooleanLiteralExpression(t *testing.T) {
+	input := "true; false;"
+	lx := lexer.New(input)
+	p := New(lx)
+	prog := p.Parse()
+	cannotHaveErrors(t, p)
+
+	if len(prog.Statements) != 2 {
+		t.Fatalf("wrong number of statements. got: %d", len(prog.Statements))
+	}
+
+	es, ok := prog.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("first statement is not an expression statement")
+	}
+
+	if !testBooleanLiteral(t, es.Expression, true) {
+		return
+	}
+
+	es, ok = prog.Statements[1].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("second statement is not an expression statement")
+	}
+
+	if !testBooleanLiteral(t, es.Expression, false) {
+		return
+	}
+}
+
 func TestParsingPrefixExpressions(t *testing.T) {
 	tests := []struct {
 		input  string
@@ -224,6 +254,21 @@ func testIntegerLiteral(t *testing.T, exp ast.Expression, intval int64) bool {
 
 	if il.IntValue != intval {
 		t.Errorf("int value is not correct. expected: %d, got: %d", intval, il.IntValue)
+		return false
+	}
+
+	return true
+}
+
+func testBooleanLiteral(t *testing.T, exp ast.Expression, b bool) bool {
+	bl, ok := exp.(*ast.BooleanLiteral)
+	if !ok {
+		t.Errorf("exp is not a boolean literal. got: %T", exp)
+		return false
+	}
+
+	if bl.BoolValue != b {
+		t.Errorf("bool value is not correct. expected: %t, got: %t", b, bl.BoolValue)
 		return false
 	}
 
@@ -307,6 +352,10 @@ func TestPrecedence(t *testing.T) {
 		{
 			"5 < 4 != 3 > 4",
 			"((5 < 4) != (3 > 4))",
+		},
+		{
+			"3 < 5 == true == false",
+			"(((3 < 5) == true) == false)",
 		},
 	}
 
