@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"lexer"
-	"token"
+	"parser"
 )
 
 const PROMPT = "\n🐵> "
@@ -20,9 +20,20 @@ func Start(in io.Reader, out io.Writer) {
 		}
 		line := sc.Text()
 		lx := lexer.New(line)
+		p := parser.New(lx)
+		prog := p.Parse()
 
-		for tok := lx.NextToken(); tok.Type != token.EOF; tok = lx.NextToken() {
-			fmt.Printf("%+v\n", tok)
+		errors := p.Errors()
+		if len(errors) > 0 {
+			fmt.Printf("Found %d error(s):\n", len(errors))
+			for _, msg := range errors {
+				fmt.Printf("- %s\n", msg)
+			}
+
+		} else {
+			for _, s := range prog.Statements {
+				fmt.Print(s.String())
+			}
 		}
 	}
 }
