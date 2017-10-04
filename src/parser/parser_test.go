@@ -377,3 +377,41 @@ func TestPrecedence(t *testing.T) {
 		}
 	}
 }
+
+func TestIfExpressions(t *testing.T) {
+	tests := []struct {
+		in  string
+		out string
+	}{
+		//{
+		//	"if(x==1){y}",
+		//	"if (x == 1) {y;}",
+		//},
+		//{
+		//	"if(x==1){ y ; let z=3; }",
+		//	"if (x == 1) {y; let z = 3;}",
+		//},
+		{
+			"if(x<y+3){x;}else{y}",
+			"if (x < (y + 3)) {x;} else {y;}",
+		},
+		//{
+		//	"let z=if(x<y+3){x;}else{y}",
+		//	"let z = if (x < y + 3) {x;} else {y;}",
+		//},
+	}
+
+	for _, tt := range tests {
+		p := New(lexer.New(tt.in))
+		prog := p.Parse()
+		cannotHaveErrors(t, p)
+
+		if len(prog.Statements) != 1 {
+			t.Fatalf("wrong number of statements. got: %d", len(prog.Statements))
+		}
+
+		if tt.out != prog.String() {
+			t.Fatalf("wrong parsing. expected: %q, got: %q", tt.out, prog.String())
+		}
+	}
+}
