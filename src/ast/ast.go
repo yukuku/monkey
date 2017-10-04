@@ -3,6 +3,7 @@ package ast
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"token"
 )
 
@@ -133,6 +134,26 @@ func (ie *IfExpression) String() string {
 		return fmt.Sprintf("%s %s %s", ie.TokenLiteral(), ie.Condition, ie.Consequence)
 	}
 	return fmt.Sprintf("%s %s %s else %s", ie.TokenLiteral(), ie.Condition, ie.Consequence, ie.Alternative)
+}
+
+type FunctionExpression struct {
+	Token  *token.Token
+	Params []*Identifier
+	Body   *BlockStatement
+}
+
+func (fu *FunctionExpression) expressionNode() {}
+func (fu *FunctionExpression) TokenLiteral() string {
+	return fu.Token.Literal
+}
+func (fu *FunctionExpression) String() string {
+	names := []string{}
+	for _, par := range fu.Params {
+		names = append(names, par.Name)
+	}
+	paramsString := strings.Join(names, ", ")
+
+	return fmt.Sprintf("%s (%s) %s", fu.TokenLiteral(), paramsString, fu.Body)
 }
 
 type BlockStatement struct {

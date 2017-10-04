@@ -53,6 +53,7 @@ func New(lx *lexer.Lexer) *Parser {
 	res.prefixParseFns[token.FALSE] = res.parseBooleanLiteral
 	res.prefixParseFns[token.LPAREN] = res.parseGroupedExpression
 	res.prefixParseFns[token.IF] = res.parseIfExpression
+	res.prefixParseFns[token.FUNCTION] = res.parseFunctionExpression
 
 	res.infixParseFns = make(map[token.Type]func(ast.Expression) ast.Expression)
 	res.infixParseFns[token.EQ] = res.parseInfixExpression
@@ -270,6 +271,54 @@ func (p *Parser) parseIfExpression() ast.Expression {
 		Condition:   condition,
 		Consequence: consequence,
 		Alternative: alternative,
+	}
+}
+
+func (p *Parser) parseFunctionExpression() ast.Expression {
+	tok := p.curToken
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	p.nextToken()
+
+	params := []*ast.Identifier{}
+	for {
+		if p.curToken.Type == token.RPAREN {
+			break
+		}
+
+		if p.curToken.Type != token.IDENT {
+			p.errors = append(p.errors, fmt.Sprintf("unexpected token at function parameter list: %q", p.curToken.Literal))
+		}
+
+		id := &ast.Identifier{Token: p.curToken, Name: p.curToken.Literal}
+		if id != nil {
+			params = append(params, id)
+		}
+
+		if p.peekTokenIs(token.COMMA) {
+			p.nextToken()
+		} else if p.peekTokenIs(token.RPAREN) {
+			// nop
+		} else {
+			p.errors = append(p.errors, fmt.Sprintf("unexpected token at function parameter list: %q", p.peekToken.Literal))
+		}
+
+		p.nextToken()
+	}
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	body := p.parseBlockStatement()
+
+	return &ast.FunctionExpression{
+		Token:  tok,
+		Params: params,
+		Body:   body,
 	}
 }
 

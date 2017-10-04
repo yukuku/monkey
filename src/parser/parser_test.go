@@ -23,7 +23,7 @@ let foo = 129123;
 
 	cannotHaveErrors(t, p)
 
-	tests := [] struct {
+	tests := []struct {
 		expectedIdentifier string
 	}{
 		{"x"},
@@ -399,6 +399,36 @@ func TestIfExpressions(t *testing.T) {
 		//	"let z=if(x<y+3){x;}else{y}",
 		//	"let z = if (x < y + 3) {x;} else {y;}",
 		//},
+	}
+
+	for _, tt := range tests {
+		p := New(lexer.New(tt.in))
+		prog := p.Parse()
+		cannotHaveErrors(t, p)
+
+		if len(prog.Statements) != 1 {
+			t.Fatalf("wrong number of statements. got: %d", len(prog.Statements))
+		}
+
+		if tt.out != prog.String() {
+			t.Fatalf("wrong parsing. expected: %q, got: %q", tt.out, prog.String())
+		}
+	}
+}
+
+func TestFunctionExpressions(t *testing.T) {
+	tests := []struct {
+		in  string
+		out string
+	}{
+		{
+			"fn(){z}",
+			"fn () {z;}",
+		},
+		{
+			"fn(x,y){z;a}",
+			"fn (x, y) {z;a;}",
+		},
 	}
 
 	for _, tt := range tests {
