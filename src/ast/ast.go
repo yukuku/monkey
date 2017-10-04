@@ -207,7 +207,7 @@ func (s *LetStatement) TokenLiteral() string {
 	return s.Token.Literal
 }
 func (s *LetStatement) String() string {
-	return fmt.Sprintf("%s %s = %s;", s.TokenLiteral(), s.Ident.Name, s.Value.String())
+	return fmt.Sprintf("%s %s = %s", s.TokenLiteral(), s.Ident.Name, s.Value.String())
 }
 
 type ReturnStatement struct {
@@ -220,7 +220,7 @@ func (s *ReturnStatement) TokenLiteral() string {
 	return s.Token.Literal
 }
 func (s *ReturnStatement) String() string {
-	return fmt.Sprintf("%s %s;", s.TokenLiteral(), s.Value.String())
+	return fmt.Sprintf("%s %s", s.TokenLiteral(), s.Value.String())
 }
 
 type ExpressionStatement struct {

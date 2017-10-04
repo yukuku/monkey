@@ -7,9 +7,9 @@ import (
 )
 
 func TestLetStatements(t *testing.T) {
+	// semicolons are optional (?)
 	input := `
-let x = 5;
-let y = 10;
+let x = 5 let y = 10
 let foo = 129123;
  	`
 
@@ -383,22 +383,22 @@ func TestIfExpressions(t *testing.T) {
 		in  string
 		out string
 	}{
-		//{
-		//	"if(x==1){y}",
-		//	"if (x == 1) {y;}",
-		//},
-		//{
-		//	"if(x==1){ y ; let z=3; }",
-		//	"if (x == 1) {y; let z = 3;}",
-		//},
+		{
+			"if(x==1){y}",
+			"if (x == 1) {y;}",
+		},
+		{
+			"if(x==1){ y ; let z=3; }",
+			"if (x == 1) {y;let z = 3;}",
+		},
 		{
 			"if(x<y+3){x;}else{y}",
 			"if (x < (y + 3)) {x;} else {y;}",
 		},
-		//{
-		//	"let z=if(x<y+3){x;}else{y}",
-		//	"let z = if (x < y + 3) {x;} else {y;}",
-		//},
+		{
+			"let z=if(x<y+3){x;}else{y}",
+			"let z = if (x < (y + 3)) {x;} else {y;}",
+		},
 	}
 
 	for _, tt := range tests {
