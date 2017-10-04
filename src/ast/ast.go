@@ -156,6 +156,26 @@ func (fu *FunctionExpression) String() string {
 	return fmt.Sprintf("%s (%s) %s", fu.TokenLiteral(), paramsString, fu.Body)
 }
 
+type CallExpression struct {
+	Token     *token.Token
+	Function  Expression
+	Arguments []Expression
+}
+
+func (ca *CallExpression) expressionNode() {}
+func (ca *CallExpression) TokenLiteral() string {
+	return ca.Token.Literal
+}
+func (ca *CallExpression) String() string {
+	args := []string{}
+	for _, arg := range ca.Arguments {
+		args = append(args, arg.String())
+	}
+	argsString := strings.Join(args, ", ")
+
+	return fmt.Sprintf("%s(%s)", ca.Function, argsString)
+}
+
 type BlockStatement struct {
 	Token      *token.Token
 	Statements []Statement

@@ -445,3 +445,37 @@ func TestFunctionExpressions(t *testing.T) {
 		}
 	}
 }
+
+func TestCallExpressions(t *testing.T) {
+	tests := []struct {
+		in  string
+		out string
+	}{
+		{
+			"tambah (1,3)",
+			"tambah(1, 3)",
+		},
+		{
+			"tambah(7,tambah(9,10),tambah())",
+			"tambah(7, tambah(9, 10), tambah())",
+		},
+		{
+			"fn(x){z}(y)(xxx,1,23)",
+			"fn (x) {z;}(y)(xxx, 1, 23)",
+		},
+	}
+
+	for _, tt := range tests {
+		p := New(lexer.New(tt.in))
+		prog := p.Parse()
+		cannotHaveErrors(t, p)
+
+		if len(prog.Statements) != 1 {
+			t.Fatalf("wrong number of statements. got: %d", len(prog.Statements))
+		}
+
+		if tt.out != prog.String() {
+			t.Fatalf("wrong parsing. expected: %q, got: %q", tt.out, prog.String())
+		}
+	}
+}

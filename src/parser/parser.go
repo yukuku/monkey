@@ -28,6 +28,7 @@ var precedences = map[token.Type]int{
 	token.MINUS:    SUM,
 	token.ASTERISK: PRODUCT,
 	token.SLASH:    PRODUCT,
+	token.LPAREN:   CALL,
 }
 
 type Parser struct {
@@ -64,6 +65,7 @@ func New(lx *lexer.Lexer) *Parser {
 	res.infixParseFns[token.MINUS] = res.parseInfixExpression
 	res.infixParseFns[token.ASTERISK] = res.parseInfixExpression
 	res.infixParseFns[token.SLASH] = res.parseInfixExpression
+	res.infixParseFns[token.LPAREN] = res.parseCallExpression
 
 	// read two tokens so curToken and peekToken are set
 	res.nextToken()
@@ -219,6 +221,40 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	res.Right = p.parseExpression(precedence)
 
 	return res
+}
+
+func (p *Parser) parseCallExpression(left ast.Expression) ast.Expression {
+	tok := p.curToken
+
+	p.nextToken()
+
+	arguments := []ast.Expression{}
+	for {
+		if p.curToken.Type == token.RPAREN {
+			break
+		}
+
+		arg := p.parseExpression(LOWEST)
+		if arg != nil {
+			arguments = append(arguments, arg)
+		}
+
+		if p.peekTokenIs(token.COMMA) {
+			p.nextToken()
+		} else if p.peekTokenIs(token.RPAREN) {
+			// nop
+		} else {
+			p.errors = append(p.errors, fmt.Sprintf("unexpected token at argument list: %q", p.peekToken.Literal))
+		}
+
+		p.nextToken()
+	}
+
+	return &ast.CallExpression{
+		Token:     tok,
+		Function:  left,
+		Arguments: arguments,
+	}
 }
 
 func (p *Parser) parseGroupedExpression() ast.Expression {
