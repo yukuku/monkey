@@ -23,6 +23,20 @@ func Eval(node ast.Node) object.Object {
 		left := Eval(node.Left)
 		right := Eval(node.Right)
 		return evalInfix(node.Operator, left, right)
+	case *ast.IfExpression:
+		condition := Eval(node.Condition)
+
+		if convertToBool(condition) {
+			return Eval(node.Consequence)
+		} else {
+			if node.Alternative == nil {
+				return &object.Null{}
+			} else {
+				return Eval(node.Alternative)
+			}
+		}
+	case *ast.BlockStatement:
+		return evalStatements(node.Statements)
 	}
 
 	panic(fmt.Sprintf("unhandled case %T", node))
@@ -30,65 +44,43 @@ func Eval(node ast.Node) object.Object {
 func evalPrefix(operator string, operand object.Object) object.Object {
 	switch operator {
 	case "!":
-		switch operand := operand.(type) {
-		case *object.Boolean:
-			if operand.Value {
-				return &object.Boolean{Value: false}
-			} else {
-				return &object.Boolean{Value: true}
-			}
-		case *object.Null:
-			return &object.Boolean{Value: true}
-		case *object.Integer:
-			intval := operand.Value
-			if intval == 0 {
-				return &object.Boolean{Value: true}
-			} else {
-				return &object.Boolean{Value: false}
-			}
-		}
-		panic(fmt.Sprintf("unhandled bang operand %T", operand))
+		return &object.Boolean{Value: !convertToBool(operand)}
 	case "-":
-		switch operand := operand.(type) {
-		case *object.Boolean:
-			if operand.Value {
-				return &object.Integer{Value: -1}
-			} else {
-				return &object.Integer{Value: 0}
-			}
-		case *object.Null:
-			return &object.Integer{Value: 0}
-		case *object.Integer:
-			intval := operand.Value
-			if intval == 0 {
-				return &object.Integer{Value: -intval}
-			} else {
-				return &object.Integer{Value: -intval}
-			}
-		}
-		panic(fmt.Sprintf("unhandled minus operand %T", operand))
+		return &object.Integer{Value: -convertToInteger(operand)}
 	}
 
 	panic(fmt.Sprintf("unhandled operator %s", operator))
 }
 
-func evalInfix(operator string, left object.Object, right object.Object) object.Object {
-	convertToInteger := func(obj object.Object) int64 {
-		switch obj := obj.(type) {
-		case *object.Boolean:
-			if obj.Value {
-				return 1
-			} else {
-				return 0
-			}
-		case *object.Null:
+func convertToInteger(obj object.Object) int64 {
+	switch obj := obj.(type) {
+	case *object.Boolean:
+		if obj.Value {
+			return 1
+		} else {
 			return 0
-		case *object.Integer:
-			return obj.Value
 		}
-		panic(fmt.Sprintf("unhandled type for integer conversion %T", obj))
+	case *object.Null:
+		return 0
+	case *object.Integer:
+		return obj.Value
 	}
+	panic(fmt.Sprintf("unhandled type for integer conversion %T", obj))
+}
 
+func convertToBool(obj object.Object) bool {
+	switch obj := obj.(type) {
+	case *object.Boolean:
+		return obj.Value
+	case *object.Null:
+		return false
+	case *object.Integer:
+		return obj.Value != 0
+	}
+	panic(fmt.Sprintf("unhandled type for bool conversion %T", obj))
+}
+
+func evalInfix(operator string, left object.Object, right object.Object) object.Object {
 	switch operator {
 	// these operators return integer
 	case "+":
