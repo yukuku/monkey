@@ -9,7 +9,13 @@ import (
 func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
-		return evalStatements(node.Statements)
+		// special case for Program, need to unwrap Return
+		res := evalStatements(node.Statements)
+		if r, ok := res.(*object.Return); ok {
+			return r.Value
+		} else {
+			return res
+		}
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
 	case *ast.IntegerLiteral:
@@ -37,6 +43,8 @@ func Eval(node ast.Node) object.Object {
 		}
 	case *ast.BlockStatement:
 		return evalStatements(node.Statements)
+	case *ast.ReturnStatement:
+		return &object.Return{Value: Eval(node.Value)}
 	}
 
 	panic(fmt.Sprintf("unhandled case %T", node))
@@ -104,7 +112,7 @@ func evalInfix(operator string, left object.Object, right object.Object) object.
 			return &object.Integer{Value: leftint / rightint}
 		}
 
-	// these operators return boolean
+		// these operators return boolean
 	case ">":
 		fallthrough
 	case "<":
@@ -135,6 +143,11 @@ func evalStatements(ss []ast.Statement) object.Object {
 
 	for _, s := range ss {
 		res = Eval(s)
+
+		// if res is a Return, stop evaluating and return it immediately
+		if r, ok := res.(*object.Return); ok {
+			return r
+		}
 	}
 
 	return res
