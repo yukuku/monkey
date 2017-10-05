@@ -15,9 +15,8 @@ func Eval(node ast.Node) object.Object {
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.IntValue}
 	}
-	fmt.Printf("unhandled case %T", node)
 
-	return nil
+	panic(fmt.Sprintf("unhandled case %T", node))
 }
 
 func evalStatements(ss []ast.Statement) object.Object {

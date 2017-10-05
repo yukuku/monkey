@@ -6,6 +6,7 @@ import (
 	"io"
 	"lexer"
 	"parser"
+	"evaluator"
 )
 
 const PROMPT = "\n🐵> "
@@ -31,9 +32,9 @@ func Start(in io.Reader, out io.Writer) {
 			}
 
 		} else {
-			for _, s := range prog.Statements {
-				fmt.Print(s.String())
-			}
+			out := evaluator.Eval(prog)
+			fmt.Print(out.Inspect())
+			fmt.Println()
 		}
 	}
 }
