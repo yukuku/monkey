@@ -75,3 +75,39 @@ func testBooleanObject(t *testing.T, o object.Object, expected bool) bool {
 
 	return true
 }
+
+func TestEvalBang(t *testing.T) {
+	tests := []struct {
+		in  string
+		out bool
+	}{
+		{"!true", false},
+		{"!false", true},
+		{"!!true", true},
+		{"!!false", false},
+		{"!7", false},
+		{"!!7", true},
+	}
+
+	for _, tt := range tests {
+		if !testBooleanObject(t, testEval(tt.in), tt.out) {
+			return
+		}
+	}
+}
+
+func TestEvalMinus(t *testing.T) {
+	tests := []struct {
+		in  string
+		out int64
+	}{
+		{"-5", -5},
+		{"--7", 7},
+	}
+
+	for _, tt := range tests {
+		if !testIntegerObject(t, testEval(tt.in), tt.out) {
+			return
+		}
+	}
+}
