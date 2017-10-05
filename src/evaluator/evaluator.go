@@ -19,6 +19,10 @@ func Eval(node ast.Node) object.Object {
 	case *ast.PrefixExpression:
 		right := Eval(node.Expression)
 		return evalPrefix(node.Operator, right)
+	case *ast.InfixExpression:
+		left := Eval(node.Left)
+		right := Eval(node.Right)
+		return evalInfix(node.Operator, left, right)
 	}
 
 	panic(fmt.Sprintf("unhandled case %T", node))
@@ -63,6 +67,49 @@ func evalPrefix(operator string, operand object.Object) object.Object {
 			}
 		}
 		panic(fmt.Sprintf("unhandled minus operand %T", operand))
+	}
+
+	panic(fmt.Sprintf("unhandled operator %s", operator))
+}
+
+func evalInfix(operator string, left object.Object, right object.Object) object.Object {
+	convertToInteger := func(obj object.Object) int64 {
+		switch obj := obj.(type) {
+		case *object.Boolean:
+			if obj.Value {
+				return 1
+			} else {
+				return 0
+			}
+		case *object.Null:
+			return 0
+		case *object.Integer:
+			return obj.Value
+		}
+		panic(fmt.Sprintf("unhandled type for integer conversion %T", obj))
+	}
+
+	switch operator {
+	case "+":
+		fallthrough
+	case "-":
+		fallthrough
+	case "*":
+		fallthrough
+	case "/":
+		leftint := convertToInteger(left)
+		rightint := convertToInteger(right)
+
+		switch operator {
+		case "+":
+			return &object.Integer{Value: leftint + rightint}
+		case "-":
+			return &object.Integer{Value: leftint - rightint}
+		case "*":
+			return &object.Integer{Value: leftint * rightint}
+		case "/":
+			return &object.Integer{Value: leftint / rightint}
+		}
 	}
 
 	panic(fmt.Sprintf("unhandled operator %s", operator))
