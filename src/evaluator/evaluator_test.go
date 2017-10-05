@@ -140,3 +140,27 @@ func TestEvalIntegerExpressions(t *testing.T) {
 		}
 	}
 }
+
+func TestEvalBooleanExpressions(t *testing.T) {
+	tests := []struct {
+		in  string
+		out bool
+	}{
+		{"true", true},
+		{"false", false},
+		{"1 < 2", true},
+		{"1 > 2", false},
+		{"1 < 1", false},
+		{"1 > 1", false},
+		{"1 == 1", true},
+		{"1 != 1", false},
+		{"1 == 2", false},
+		{"1 != 2", true},
+	}
+
+	for _, tt := range tests {
+		if !testBooleanObject(t, testEval(tt.in), tt.out) {
+			return
+		}
+	}
+}

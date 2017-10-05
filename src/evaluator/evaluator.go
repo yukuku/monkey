@@ -90,6 +90,7 @@ func evalInfix(operator string, left object.Object, right object.Object) object.
 	}
 
 	switch operator {
+	// these operators return integer
 	case "+":
 		fallthrough
 	case "-":
@@ -109,6 +110,28 @@ func evalInfix(operator string, left object.Object, right object.Object) object.
 			return &object.Integer{Value: leftint * rightint}
 		case "/":
 			return &object.Integer{Value: leftint / rightint}
+		}
+
+	// these operators return boolean
+	case ">":
+		fallthrough
+	case "<":
+		fallthrough
+	case "==":
+		fallthrough
+	case "!=":
+		leftint := convertToInteger(left)
+		rightint := convertToInteger(right)
+
+		switch operator {
+		case ">":
+			return &object.Boolean{Value: leftint > rightint}
+		case "<":
+			return &object.Boolean{Value: leftint < rightint}
+		case "==":
+			return &object.Boolean{Value: leftint == rightint}
+		case "!=":
+			return &object.Boolean{Value: leftint != rightint}
 		}
 	}
 
