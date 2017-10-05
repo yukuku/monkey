@@ -14,6 +14,8 @@ func Eval(node ast.Node) object.Object {
 		return Eval(node.Expression)
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.IntValue}
+	case *ast.BooleanLiteral:
+		return &object.Boolean{Value: node.BoolValue}
 	}
 
 	panic(fmt.Sprintf("unhandled case %T", node))
