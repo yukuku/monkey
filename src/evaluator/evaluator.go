@@ -32,7 +32,12 @@ func Eval(node ast.Node) object.Object {
 	case *ast.IfExpression:
 		condition := Eval(node.Condition)
 
-		if convertToBool(condition) {
+		pred, err := convertToBool(condition)
+		if err != nil {
+			return err
+		}
+
+		if pred {
 			return Eval(node.Consequence)
 		} else {
 			if node.Alternative == nil {
@@ -45,50 +50,78 @@ func Eval(node ast.Node) object.Object {
 		return evalStatements(node.Statements)
 	case *ast.ReturnStatement:
 		return &object.Return{Value: Eval(node.Value)}
+	default:
+		return newError("unhandled case %T", node)
+	}
+}
+
+func newError(format string, args ...interface{}) *object.Error {
+	return &object.Error{Message: fmt.Sprintf(format, args...)}
+}
+
+func evalPrefix(operator string, operand object.Object) object.Object {
+	if _, ok := operand.(*object.Error); ok {
+		return operand
 	}
 
-	panic(fmt.Sprintf("unhandled case %T", node))
-}
-func evalPrefix(operator string, operand object.Object) object.Object {
 	switch operator {
 	case "!":
-		return &object.Boolean{Value: !convertToBool(operand)}
+		val, err := convertToBool(operand)
+		if err != nil {
+			return err
+		}
+		return &object.Boolean{Value: !val}
 	case "-":
-		return &object.Integer{Value: -convertToInteger(operand)}
+		val, err := convertToInteger(operand)
+		if err != nil {
+			return err
+		}
+		return &object.Integer{Value: -val}
 	}
 
-	panic(fmt.Sprintf("unhandled operator %s", operator))
+	return newError("unhandled operator %s", operator)
 }
 
-func convertToInteger(obj object.Object) int64 {
+func convertToInteger(obj object.Object) (result int64, err *object.Error) {
 	switch obj := obj.(type) {
 	case *object.Boolean:
 		if obj.Value {
-			return 1
+			result = 1
 		} else {
-			return 0
+			result = 0
 		}
 	case *object.Null:
-		return 0
+		result = 0
 	case *object.Integer:
-		return obj.Value
+		result = obj.Value
+	default:
+		err = newError("unhandled type for integer conversion %T", obj)
 	}
-	panic(fmt.Sprintf("unhandled type for integer conversion %T", obj))
+	return
 }
 
-func convertToBool(obj object.Object) bool {
+func convertToBool(obj object.Object) (result bool, err *object.Error) {
 	switch obj := obj.(type) {
 	case *object.Boolean:
-		return obj.Value
+		result = obj.Value
 	case *object.Null:
-		return false
+		result = false
 	case *object.Integer:
-		return obj.Value != 0
+		result = obj.Value != 0
+	default:
+		err = newError("unhandled type for bool conversion %T", obj)
 	}
-	panic(fmt.Sprintf("unhandled type for bool conversion %T", obj))
+	return
 }
 
 func evalInfix(operator string, left object.Object, right object.Object) object.Object {
+	if _, ok := left.(*object.Error); ok {
+		return left
+	}
+	if _, ok := right.(*object.Error); ok {
+		return right
+	}
+
 	switch operator {
 	// these operators return integer
 	case "+":
@@ -98,8 +131,23 @@ func evalInfix(operator string, left object.Object, right object.Object) object.
 	case "*":
 		fallthrough
 	case "/":
-		leftint := convertToInteger(left)
-		rightint := convertToInteger(right)
+		// booleans are not allowed
+		if _, ok := left.(*object.Boolean); ok {
+			return newError("first operand of %s cannot be boolean", operator)
+		}
+		if _, ok := right.(*object.Boolean); ok {
+			return newError("second operand of %s cannot be boolean", operator)
+		}
+
+		leftint, err := convertToInteger(left)
+		if err != nil {
+			return err
+		}
+
+		rightint, err := convertToInteger(right)
+		if err != nil {
+			return err
+		}
 
 		switch operator {
 		case "+":
@@ -112,7 +160,7 @@ func evalInfix(operator string, left object.Object, right object.Object) object.
 			return &object.Integer{Value: leftint / rightint}
 		}
 
-		// these operators return boolean
+		// these operators return boolean:
 	case ">":
 		fallthrough
 	case "<":
@@ -120,8 +168,35 @@ func evalInfix(operator string, left object.Object, right object.Object) object.
 	case "==":
 		fallthrough
 	case "!=":
-		leftint := convertToInteger(left)
-		rightint := convertToInteger(right)
+		if operator == "<" || operator == ">" {
+			// booleans are not allowed
+			if _, ok := left.(*object.Boolean); ok {
+				return newError("first operand of %s cannot be boolean", operator)
+			}
+			if _, ok := right.(*object.Boolean); ok {
+				return newError("second operand of %s cannot be boolean", operator)
+			}
+		}
+		if operator == "==" || operator == "!=" {
+			// must be both boolean or both integers
+			_, leftInt := left.(*object.Integer)
+			_, rightInt := right.(*object.Integer)
+			_, leftBool := left.(*object.Boolean)
+			_, rightBool := right.(*object.Boolean)
+			if (leftInt && rightInt) || (leftBool && rightBool) {
+			} else {
+				return newError("cannot do %s of different types", operator)
+			}
+		}
+
+		leftint, err := convertToInteger(left)
+		if err != nil {
+			return err
+		}
+		rightint, err := convertToInteger(right)
+		if err != nil {
+			return err
+		}
 
 		switch operator {
 		case ">":
@@ -135,7 +210,7 @@ func evalInfix(operator string, left object.Object, right object.Object) object.
 		}
 	}
 
-	panic(fmt.Sprintf("unhandled operator %s", operator))
+	return newError("unhandled operator %s", operator)
 }
 
 func evalStatements(ss []ast.Statement) object.Object {
@@ -144,9 +219,12 @@ func evalStatements(ss []ast.Statement) object.Object {
 	for _, s := range ss {
 		res = Eval(s)
 
-		// if res is a Return, stop evaluating and return it immediately
+		// if res is a Return or an Error, stop evaluating and return it immediately
 		if r, ok := res.(*object.Return); ok {
 			return r
+		}
+		if e, ok := res.(*object.Error); ok {
+			return e
 		}
 	}
 

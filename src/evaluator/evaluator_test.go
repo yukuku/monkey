@@ -227,3 +227,31 @@ func TestEvalReturn(t *testing.T) {
 		}
 	}
 }
+
+func TestErrorHandling(t *testing.T) {
+	tests := []struct {
+		in  string
+		msg string
+	}{
+		{"return false + 3;", "first operand of + cannot be boolean"},
+		{"false - 3;", "first operand of - cannot be boolean"},
+		{"3 * false;", "second operand of * cannot be boolean"},
+		{"false / true;", "first operand of / cannot be boolean"},
+		{"false < true", "first operand of < cannot be boolean"},
+		{"3 > true", "second operand of > cannot be boolean"},
+		{"if (true) { if (true) { return 3 > true } }", "second operand of > cannot be boolean"},
+		{"(1 != false) * 2", "cannot do != of different types"},
+		{"1 * (3 == true)", "cannot do == of different types"},
+	}
+
+	for _, tt := range tests {
+		eval := testEval(tt.in)
+		if e, ok := eval.(*object.Error); !ok {
+			t.Errorf("result is not error. got: %v", eval)
+		} else {
+			if e.Message != tt.msg {
+				t.Errorf("error message is wrong. expected: %q, got: %q", tt.msg, e.Message)
+			}
+		}
+	}
+}

@@ -10,7 +10,7 @@ func TestLetStatements(t *testing.T) {
 	// semicolons are optional (?)
 	input := `
 let x = 5 let y = 10
-let foo = 129123;
+let foo = 129123 + 123;
  	`
 
 	lx := lexer.New(input)
@@ -116,6 +116,7 @@ func TestErrorReporting(t *testing.T) {
 let x = 5;
 let y 10;
 let 129123;
+return 1123456789000123456789;
  	`
 
 	lx := lexer.New(input)
@@ -128,7 +129,7 @@ let 129123;
 
 	// must have errors
 	errors := p.Errors()
-	expectedErrorCount := 2
+	expectedErrorCount := 3
 	if len(errors) != expectedErrorCount {
 		t.Fatalf("parser is expected to have %d errors. got: %d", expectedErrorCount, len(errors))
 	}
