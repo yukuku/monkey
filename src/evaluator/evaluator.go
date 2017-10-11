@@ -79,7 +79,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		}
 
 		f := c.(*object.Function)
-		e2 := env.NewLinkedEnvironment()
+		e2 := f.Env.NewLinkedEnvironment()
 		for i, arg := range node.Arguments {
 			actual := Eval(arg, env)
 			if actual.Type() == object.TYPE_ERROR {
