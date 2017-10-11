@@ -367,6 +367,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	prefixParseFn := p.prefixParseFns[p.curToken.Type]
 	if prefixParseFn == nil {
 		p.errors = append(p.errors, fmt.Sprintf("no prefix parser function for %s", p.curToken.Type))
+		println("errrorrrrrr")
 		return nil
 	}
 

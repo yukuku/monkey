@@ -1,15 +1,20 @@
 package object
 
-import "fmt"
+import (
+	"ast"
+	"fmt"
+	"strings"
+)
 
-type Type string
+type Type int
 
 const (
-	TYPE_INTEGER = "INTEGER"
-	TYPE_BOOLEAN = "BOOLEAN"
-	TYPE_NULL    = "NULL"
-	TYPE_RETURN  = "RETURN"
-	TYPE_ERROR   = "ERROR"
+	TYPE_INTEGER  = iota + 1
+	TYPE_BOOLEAN
+	TYPE_NULL
+	TYPE_RETURN
+	TYPE_ERROR
+	TYPE_FUNCTION
 )
 
 type Object interface {
@@ -69,4 +74,17 @@ func (e *Error) Inspect() string {
 }
 func (e *Error) Type() Type {
 	return TYPE_ERROR
+}
+
+type Function struct {
+	Params []string
+	Body   *ast.BlockStatement
+	Env    *Environment
+}
+
+func (f *Function) Inspect() string {
+	return fmt.Sprintf("fn (%s) %s", strings.Join(f.Params, ", "), f.Body)
+}
+func (f *Function) Type() Type {
+	return TYPE_FUNCTION
 }

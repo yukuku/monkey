@@ -34,7 +34,7 @@ func TestEvalIntegerExpression(t *testing.T) {
 func testIntegerObject(t *testing.T, o object.Object, expected int64) bool {
 	i, ok := o.(*object.Integer)
 	if !ok {
-		t.Errorf("object is not integer. got: %T", o)
+		t.Errorf("object is not integer. got: %T %s", o, o)
 		return false
 	}
 
@@ -273,5 +273,40 @@ func TestLetStatement(t *testing.T) {
 		if !testIntegerObject(t, testEval(tt.in), tt.out) {
 			return
 		}
+	}
+}
+
+func TestFunctionObject(t *testing.T) {
+	eval := testEval("fn(x, y) { x y + 5 }")
+
+	if f, ok := eval.(*object.Function); !ok {
+		t.Fatalf("object is not function. got: %s", eval)
+	} else {
+		if len(f.Params) != 2 {
+			t.Fatalf("wrong parameters")
+		}
+
+		if f.Body.String() != "{x;(y + 5);}" {
+			t.Fatalf("wrong body. got: %s", f.Body.String())
+		}
+	}
+}
+
+func TestFunctionCall(t *testing.T) {
+	tests := []struct {
+		in  string
+		out int64
+	}{
+		{"let identity = fn(x) { x; }; identity(5);", 5},
+		{"let identity = fn(x) { return x; }; identity(5);", 5},
+		{"let double = fn(x) { x * 2; }; double(5);", 10},
+		{"let add = fn(x, y) { x + y; }; add(5, 5);", 10},
+		{"let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+		{"fn(x) { x; }(5)", 5},
+		{"let f = fn(x,y) { if (x>y) { return x } else {y}} let a = f(8,10) + f(11, 22)", 32},
+	}
+
+	for _, tt := range tests {
+		testIntegerObject(t, testEval(tt.in), tt.out)
 	}
 }

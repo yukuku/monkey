@@ -11,8 +11,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.Program:
 		// special case for Program, need to unwrap Return
 		res := evalStatements(node.Statements, env)
-		if r, ok := res.(*object.Return); ok {
-			return r.Value
+		if res.Type() == object.TYPE_RETURN {
+			return res.(*object.Return).Value
 		} else {
 			return res
 		}
@@ -52,14 +52,46 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return &object.Return{Value: Eval(node.Value, env)}
 	case *ast.LetStatement:
 		value := Eval(node.Value, env)
-		if e, ok := value.(*object.Error); ok {
-			return e
+		if value.Type() == object.TYPE_ERROR {
+			return value
 		}
 		env.Set(node.Ident.Name, value)
 		return value
 	case *ast.Identifier:
 		if value, ok := env.Get(node.Name); !ok {
 			return newError("unknown identifier: %s", node.Name)
+		} else {
+			return value
+		}
+	case *ast.FunctionExpression:
+		params := []string{}
+		for _, p := range node.Params {
+			params = append(params, p.Name)
+		}
+		return &object.Function{Params: params, Body: node.Body, Env: env}
+	case *ast.CallExpression:
+		c := Eval(node.Function, env)
+		if c.Type() == object.TYPE_ERROR {
+			return c
+		}
+		if c.Type() != object.TYPE_FUNCTION {
+			return newError("non callable object is used: %s", c.Inspect())
+		}
+
+		f := c.(*object.Function)
+		e2 := env.NewLinkedEnvironment()
+		for i, arg := range node.Arguments {
+			actual := Eval(arg, env)
+			if actual.Type() == object.TYPE_ERROR {
+				return actual
+			}
+
+			e2.Set(f.Params[i], actual)
+		}
+
+		value := Eval(f.Body, e2)
+		if value.Type() == object.TYPE_RETURN {
+			return value.(*object.Return).Value
 		} else {
 			return value
 		}
@@ -73,7 +105,7 @@ func newError(format string, args ...interface{}) *object.Error {
 }
 
 func evalPrefix(operator string, operand object.Object, env *object.Environment) object.Object {
-	if _, ok := operand.(*object.Error); ok {
+	if operand.Type() == object.TYPE_ERROR {
 		return operand
 	}
 
@@ -128,10 +160,10 @@ func convertToBool(obj object.Object) (result bool, err *object.Error) {
 }
 
 func evalInfix(operator string, left object.Object, right object.Object, env *object.Environment) object.Object {
-	if _, ok := left.(*object.Error); ok {
+	if left.Type() == object.TYPE_ERROR {
 		return left
 	}
-	if _, ok := right.(*object.Error); ok {
+	if right.Type() == object.TYPE_ERROR {
 		return right
 	}
 
@@ -233,11 +265,8 @@ func evalStatements(ss []ast.Statement, env *object.Environment) object.Object {
 		res = Eval(s, env)
 
 		// if res is a Return or an Error, stop evaluating and return it immediately
-		if r, ok := res.(*object.Return); ok {
-			return r
-		}
-		if e, ok := res.(*object.Error); ok {
-			return e
+		if res.Type() == object.TYPE_RETURN || res.Type() == object.TYPE_ERROR {
+			return res
 		}
 	}
 
