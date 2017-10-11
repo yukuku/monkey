@@ -14,6 +14,7 @@ const PROMPT = "\n🐵> "
 
 func Start(in io.Reader, out io.Writer) {
 	sc := bufio.NewScanner(in)
+	env := object.NewEnvironment()
 
 	for {
 		fmt.Print(PROMPT)
@@ -33,7 +34,6 @@ func Start(in io.Reader, out io.Writer) {
 			}
 
 		} else {
-			env := object.NewEnvironment()
 			out := evaluator.Eval(prog, env)
 			fmt.Print(out.Inspect())
 			fmt.Println()
