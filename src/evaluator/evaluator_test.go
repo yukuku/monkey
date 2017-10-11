@@ -11,7 +11,8 @@ func testEval(in string) object.Object {
 	lx := lexer.New(in)
 	p := parser.New(lx)
 	prog := p.Parse()
-	return Eval(prog)
+	env := object.NewEnvironment()
+	return Eval(prog, env)
 }
 
 func TestEvalIntegerExpression(t *testing.T) {
@@ -242,6 +243,7 @@ func TestErrorHandling(t *testing.T) {
 		{"if (true) { if (true) { return 3 > true } }", "second operand of > cannot be boolean"},
 		{"(1 != false) * 2", "cannot do != of different types"},
 		{"1 * (3 == true)", "cannot do == of different types"},
+		{"foo", "unknown identifier: foo"},
 	}
 
 	for _, tt := range tests {
@@ -252,6 +254,24 @@ func TestErrorHandling(t *testing.T) {
 			if e.Message != tt.msg {
 				t.Errorf("error message is wrong. expected: %q, got: %q", tt.msg, e.Message)
 			}
+		}
+	}
+}
+
+func TestLetStatement(t *testing.T) {
+	tests := []struct {
+		in  string
+		out int64
+	}{
+		{"let a = 5; a;", 5},
+		{"let a = 5 * 5; a;", 25},
+		{"let a = 5; let b = a; b;", 5},
+		{"let a = 5; let b = a; let c = a + b + 5; c;", 15},
+	}
+
+	for _, tt := range tests {
+		if !testIntegerObject(t, testEval(tt.in), tt.out) {
+			return
 		}
 	}
 }

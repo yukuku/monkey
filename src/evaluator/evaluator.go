@@ -6,31 +6,31 @@ import (
 	"object"
 )
 
-func Eval(node ast.Node) object.Object {
+func Eval(node ast.Node, env *object.Environment) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
 		// special case for Program, need to unwrap Return
-		res := evalStatements(node.Statements)
+		res := evalStatements(node.Statements, env)
 		if r, ok := res.(*object.Return); ok {
 			return r.Value
 		} else {
 			return res
 		}
 	case *ast.ExpressionStatement:
-		return Eval(node.Expression)
+		return Eval(node.Expression, env)
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.IntValue}
 	case *ast.BooleanLiteral:
 		return &object.Boolean{Value: node.BoolValue}
 	case *ast.PrefixExpression:
-		right := Eval(node.Expression)
-		return evalPrefix(node.Operator, right)
+		right := Eval(node.Expression, env)
+		return evalPrefix(node.Operator, right, env)
 	case *ast.InfixExpression:
-		left := Eval(node.Left)
-		right := Eval(node.Right)
-		return evalInfix(node.Operator, left, right)
+		left := Eval(node.Left, env)
+		right := Eval(node.Right, env)
+		return evalInfix(node.Operator, left, right, env)
 	case *ast.IfExpression:
-		condition := Eval(node.Condition)
+		condition := Eval(node.Condition, env)
 
 		pred, err := convertToBool(condition)
 		if err != nil {
@@ -38,18 +38,31 @@ func Eval(node ast.Node) object.Object {
 		}
 
 		if pred {
-			return Eval(node.Consequence)
+			return Eval(node.Consequence, env)
 		} else {
 			if node.Alternative == nil {
 				return &object.Null{}
 			} else {
-				return Eval(node.Alternative)
+				return Eval(node.Alternative, env)
 			}
 		}
 	case *ast.BlockStatement:
-		return evalStatements(node.Statements)
+		return evalStatements(node.Statements, env)
 	case *ast.ReturnStatement:
-		return &object.Return{Value: Eval(node.Value)}
+		return &object.Return{Value: Eval(node.Value, env)}
+	case *ast.LetStatement:
+		value := Eval(node.Value, env)
+		if e, ok := value.(*object.Error); ok {
+			return e
+		}
+		env.Set(node.Ident.Name, value)
+		return value
+	case *ast.Identifier:
+		if value, ok := env.Get(node.Name); !ok {
+			return newError("unknown identifier: %s", node.Name)
+		} else {
+			return value
+		}
 	default:
 		return newError("unhandled case %T", node)
 	}
@@ -59,7 +72,7 @@ func newError(format string, args ...interface{}) *object.Error {
 	return &object.Error{Message: fmt.Sprintf(format, args...)}
 }
 
-func evalPrefix(operator string, operand object.Object) object.Object {
+func evalPrefix(operator string, operand object.Object, env *object.Environment) object.Object {
 	if _, ok := operand.(*object.Error); ok {
 		return operand
 	}
@@ -114,7 +127,7 @@ func convertToBool(obj object.Object) (result bool, err *object.Error) {
 	return
 }
 
-func evalInfix(operator string, left object.Object, right object.Object) object.Object {
+func evalInfix(operator string, left object.Object, right object.Object, env *object.Environment) object.Object {
 	if _, ok := left.(*object.Error); ok {
 		return left
 	}
@@ -213,11 +226,11 @@ func evalInfix(operator string, left object.Object, right object.Object) object.
 	return newError("unhandled operator %s", operator)
 }
 
-func evalStatements(ss []ast.Statement) object.Object {
+func evalStatements(ss []ast.Statement, env *object.Environment) object.Object {
 	var res object.Object
 
 	for _, s := range ss {
-		res = Eval(s)
+		res = Eval(s, env)
 
 		// if res is a Return or an Error, stop evaluating and return it immediately
 		if r, ok := res.(*object.Return); ok {

@@ -7,6 +7,7 @@ import (
 	"lexer"
 	"parser"
 	"evaluator"
+	"object"
 )
 
 const PROMPT = "\n🐵> "
@@ -32,7 +33,8 @@ func Start(in io.Reader, out io.Writer) {
 			}
 
 		} else {
-			out := evaluator.Eval(prog)
+			env := object.NewEnvironment()
+			out := evaluator.Eval(prog, env)
 			fmt.Print(out.Inspect())
 			fmt.Println()
 		}
